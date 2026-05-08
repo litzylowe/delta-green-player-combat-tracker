@@ -1,0 +1,1690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DELTA GREEN // COMBAT COMPANION</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap');
+
+:root {
+  --bg:        #0f0f0d;
+  --surface:   #181815;
+  --surface2:  #1f1f1b;
+  --surface3:  #252520;
+  --border:    #2e2e28;
+  --border2:   #3a3a32;
+  --text:      #d8d0bc;
+  --text-dim:  #b8aa96;
+  --text-faint:#827568;
+  --green:     #2d4a1e;
+  --green-l:   #3d6129;
+  --green-t:   #8ec870;
+  --amber:     #f0cc44;
+  --amber-d:   #2e2008;
+  --amber-t:   #d8c898;
+  --red:       #8b1a1a;
+  --red-l:     #c0392b;
+  --red-t:     #e88080;
+  --blue:      #1a3d5c;
+  --blue-l:    #2a5a80;
+  --blue-t:    #80c0e8;
+  --hp-col:    #6abe50;
+  --wp-col:    #5aaad8;
+  --san-col:   #aa82f8;
+  --crit-col:  #f0cc44;
+  --success-col: #8ec870;
+  --fail-col:  #e88080;
+  --fumble-col:#ff4444;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  overflow: hidden;
+}
+
+/* ============================
+   LOAD SCREEN
+   ============================ */
+#load-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.load-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  padding: 32px 36px;
+  max-width: 540px;
+  width: 100%;
+}
+.load-title {
+  font-family: 'Special Elite', serif;
+  font-size: 20px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.load-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.load-section { margin-bottom: 20px; }
+.load-section-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--amber-t);
+  margin-bottom: 8px;
+}
+.load-url-row { display: flex; gap: 8px; }
+.load-input {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 8px 10px;
+  outline: none;
+  flex: 1;
+}
+.load-input:focus { border-color: var(--green-l); }
+.load-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+.roster-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  background: var(--surface2);
+  transition: background 0.1s;
+}
+.roster-row:hover { background: var(--surface3); border-color: var(--green-l); }
+.roster-name { font-family: 'Special Elite', serif; font-size: 14px; flex: 1; }
+.roster-meta { font-size: 11px; color: var(--text-dim); }
+.load-divider {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 2px;
+  margin: 6px 0;
+}
+.load-manual-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.lm-field { display: flex; flex-direction: column; gap: 3px; }
+.lm-label { font-size: 10px; color: var(--amber-t); letter-spacing: 1px; text-transform: uppercase; }
+.lm-input {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 5px 7px;
+  outline: none;
+}
+.lm-input:focus { border-color: var(--green-l); }
+.load-error { font-size: 12px; color: var(--red-t); margin-top: 4px; min-height: 14px; }
+
+/* ============================
+   MAIN LAYOUT
+   ============================ */
+#main {
+  display: none;
+  height: 100vh;
+  flex-direction: column;
+}
+
+/* Top bar */
+#topbar {
+  background: #000;
+  border-bottom: 1px solid var(--border2);
+  height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+.tb-agent-name {
+  font-family: 'Special Elite', serif;
+  font-size: 17px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+.tb-agent-meta { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; }
+.tb-sep { color: var(--text-faint); }
+.tb-round { font-size: 12px; color: var(--amber); letter-spacing: 2px; text-transform: uppercase; }
+#tb-phase {
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  padding: 2px 8px;
+  border: 1px solid;
+  text-transform: uppercase;
+}
+.phase-idle    { color: var(--text-dim);  border-color: var(--border2); }
+.phase-attack  { color: var(--red-t);     border-color: var(--red);     background: rgba(139,26,26,0.15); }
+.phase-defense { color: var(--blue-t);    border-color: var(--blue-l);  background: rgba(26,61,92,0.2); }
+.phase-end     { color: var(--amber);     border-color: var(--amber-d); background: rgba(46,32,8,0.3); }
+.tb-spacer { flex: 1; }
+.tb-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 5px 11px;
+  border: 1px solid;
+  cursor: pointer;
+  text-transform: uppercase;
+  background: transparent;
+}
+.tb-btn-neutral { color: var(--text-dim);  border-color: var(--border2); }
+.tb-btn-neutral:hover { background: var(--surface2); }
+.tb-btn-amber { color: var(--amber); border-color: var(--amber-d); }
+.tb-btn-amber:hover { background: rgba(46,32,8,0.5); }
+.tb-btn-green { color: var(--green-t); border-color: var(--green-l); }
+.tb-btn-green:hover { background: rgba(45,74,30,0.3); }
+
+/* Body panels */
+#body {
+  display: grid;
+  grid-template-columns: 260px 280px 1fr;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Panel base */
+.panel {
+  border-right: 1px solid var(--border2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel:last-child { border-right: none; }
+.panel-header {
+  background: #000;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border2);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ============================
+   LEFT: STATS PANEL
+   ============================ */
+.big-stat-block {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.big-stat-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.big-stat-bar-track {
+  height: 8px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.big-stat-bar-fill { height: 100%; transition: width 0.3s; }
+.big-stat-numbers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.big-stat-current {
+  font-family: 'Special Elite', serif;
+  font-size: 28px;
+  line-height: 1;
+  min-width: 40px;
+}
+.big-stat-max { font-size: 13px; color: var(--text-dim); }
+.big-stat-btns {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.big-adj {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border2);
+  background: var(--surface3);
+  color: var(--text-dim);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.big-adj:hover { background: var(--border); color: var(--text); }
+.big-adj-5 { font-size: 11px; }
+
+.stat-warning { font-size: 11px; color: var(--red-t); margin-top: 4px; display: none; }
+.stat-warning.show { display: block; }
+
+/* Six stats grid */
+.six-stats {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px 8px;
+}
+.six-stat-item { display: flex; flex-direction: column; gap: 2px; }
+.six-stat-label { font-size: 10px; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; }
+.six-stat-val { font-family: 'Special Elite', serif; font-size: 18px; color: var(--text); }
+.six-stat-x5 { font-size: 11px; color: var(--text-dim); }
+
+/* Status badges */
+.statuses-section {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+}
+.statuses-title { font-size: 11px; letter-spacing: 1.5px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; }
+.status-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.status-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+.sc-off   { color: var(--text-faint); border-color: var(--border); background: transparent; }
+.sc-off:hover { border-color: var(--border2); color: var(--text-dim); }
+.sc-suppressed { color: var(--amber);   border-color: var(--amber-d); background: rgba(46,32,8,0.4); }
+.sc-pinned     { color: var(--red-t);   border-color: var(--red);     background: rgba(139,26,26,0.2); }
+.sc-hurt       { color: #e8a060;        border-color: #7a4010;        background: rgba(122,64,16,0.2); }
+.sc-dying      { color: var(--red-t);   border-color: var(--red-l);   background: rgba(192,57,43,0.2); }
+.sc-insane     { color: var(--san-col); border-color: #6b3bb0;        background: rgba(107,59,176,0.2); }
+.sc-unconscious{ color: var(--blue-t);  border-color: var(--blue-l);  background: rgba(26,61,92,0.2); }
+
+/* ============================
+   MIDDLE: SKILLS + DICE
+   ============================ */
+.weapons-list {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.weapon-item {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.weapon-item:last-child { border-bottom: none; }
+.weapon-item:hover, .weapon-item.selected { background: rgba(45,74,30,0.15); }
+.weapon-item.selected { border-left: 2px solid var(--green-l); }
+.weapon-name { font-family: 'Special Elite', serif; font-size: 15px; color: var(--text); }
+.weapon-stats { font-size: 11px; color: var(--text-dim); margin-top: 2px; letter-spacing: 0.5px; }
+.weapon-skill-val { color: var(--green-t); font-size: 13px; font-weight: bold; }
+
+.skills-grid-combat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.skill-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(46,46,40,0.6);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.skill-row:last-child { border-bottom: none; }
+.skill-row:hover { background: rgba(45,74,30,0.12); }
+.skill-row.loaded { background: rgba(45,74,30,0.2); border-left: 2px solid var(--green-l); }
+.skill-row-name { flex: 1; font-size: 12px; color: var(--text-dim); }
+.skill-row-val { font-family: 'Special Elite', serif; font-size: 15px; color: var(--green-t); min-width: 32px; text-align: right; }
+.skill-row-pct { font-size: 11px; color: var(--text-dim); }
+
+/* Dice roller */
+.dice-roller {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+}
+.dr-loaded-skill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  min-height: 20px;
+}
+.dr-skill-name { font-size: 12px; color: var(--amber-t); letter-spacing: 0.5px; }
+.dr-skill-val  { font-family: 'Special Elite', serif; font-size: 20px; color: var(--green-t); }
+.dr-clear { font-size: 11px; color: var(--text-dim); cursor: pointer; padding: 0 4px; }
+.dr-clear:hover { color: var(--red-t); }
+.dr-roll-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 9px;
+  width: 100%;
+  border: 1px solid var(--green-l);
+  background: rgba(45,74,30,0.25);
+  color: var(--green-t);
+  cursor: pointer;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  transition: background 0.12s;
+}
+.dr-roll-btn:hover { background: rgba(45,74,30,0.5); }
+.dr-roll-btn:disabled { opacity: 0.4; cursor: default; }
+.dr-result {
+  text-align: center;
+  padding: 10px 6px;
+  border: 1px solid var(--border);
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: border-color 0.2s;
+}
+.dr-result-number { font-family: 'Special Elite', serif; font-size: 32px; line-height: 1; }
+.dr-result-label { font-size: 13px; letter-spacing: 2px; text-transform: uppercase; }
+.dr-result-detail { font-size: 11px; color: var(--text-dim); letter-spacing: 0.5px; }
+.dr-critical { color: var(--crit-col);    border-color: var(--amber-d) !important; }
+.dr-success  { color: var(--success-col); border-color: var(--green) !important; }
+.dr-failure  { color: var(--fail-col);    border-color: var(--red) !important; }
+.dr-fumble   { color: var(--fumble-col);  border-color: var(--red-l) !important; }
+.dr-idle     { color: var(--text-faint); }
+
+.dr-other-dice {
+  display: flex;
+  gap: 5px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.dr-die-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 8px;
+  border: 1px solid var(--border2);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  flex: 1;
+}
+.dr-die-btn:hover { background: var(--surface3); color: var(--text); }
+
+/* ============================
+   RIGHT: FLOW PANEL
+   ============================ */
+.flow-panel-inner { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+#breadcrumb {
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  min-height: 28px;
+  scrollbar-width: none;
+}
+#breadcrumb::-webkit-scrollbar { display: none; }
+.bc-item { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+.bc-item.bc-cur { color: var(--text); }
+.bc-sep { color: var(--text-faint); font-size: 11px; }
+
+#flow-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-idle {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  opacity: 0.4;
+}
+.flow-idle-icon { font-size: 36px; }
+.flow-idle-text { font-size: 12px; color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase; text-align: center; }
+
+.step-card { max-width: 100%; }
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding: 2px 8px;
+  border: 1px solid;
+}
+.sb-decision { color: var(--amber);   border-color: var(--amber-d); background: rgba(46,32,8,0.4); }
+.sb-info     { color: var(--green-t); border-color: var(--green);   background: rgba(45,74,30,0.2); }
+.sb-choice   { color: var(--blue-t);  border-color: var(--blue);    background: rgba(26,61,92,0.2); }
+.sb-end      { color: var(--text-dim);border-color: var(--border2); background: rgba(0,0,0,0.2); }
+
+.step-title {
+  font-family: 'Special Elite', serif;
+  font-size: 20px;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+.step-text {
+  font-size: 14px;
+  color: var(--amber-t);
+  line-height: 1.75;
+  margin-bottom: 10px;
+}
+.step-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--surface);
+  border-left: 2px solid var(--border2);
+  padding: 7px 10px;
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+/* Highlight when dice relevant */
+.step-hint.dice-cue {
+  border-left-color: var(--green-l);
+  background: rgba(45,74,30,0.1);
+  color: var(--green-t);
+}
+
+.flow-btns { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.flow-btn-row { display: flex; gap: 6px; }
+.flow-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  letter-spacing: 1px;
+  padding: 10px 14px;
+  border: 1px solid;
+  cursor: pointer;
+  text-transform: uppercase;
+  flex: 1;
+  text-align: center;
+  transition: background 0.12s;
+}
+.fb-yes     { color: var(--green-t); border-color: var(--green-l); background: rgba(45,74,30,0.2); }
+.fb-yes:hover { background: rgba(45,74,30,0.45); }
+.fb-no      { color: var(--red-t);   border-color: var(--red);     background: rgba(139,26,26,0.15); }
+.fb-no:hover  { background: rgba(139,26,26,0.35); }
+.fb-neutral { color: var(--blue-t);  border-color: var(--blue-l);  background: rgba(26,61,92,0.15); }
+.fb-neutral:hover { background: rgba(26,61,92,0.35); }
+.fb-cont    { color: var(--green-t); border-color: var(--green-l); background: rgba(45,74,30,0.15); max-width: 240px; }
+.fb-cont:hover { background: rgba(45,74,30,0.35); }
+.fb-end     { color: var(--amber);   border-color: var(--amber-d); background: rgba(46,32,8,0.2); }
+.fb-end:hover { background: rgba(46,32,8,0.5); }
+
+.flow-nav {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.flow-back {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  color: var(--text-faint);
+  cursor: pointer;
+  text-transform: uppercase;
+  background: transparent;
+}
+.flow-back:hover { color: var(--text-dim); border-color: var(--border2); }
+
+/* Flow start buttons */
+.flow-start-btns {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.flow-start-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 9px 14px;
+  border: 1px solid;
+  cursor: pointer;
+  text-transform: uppercase;
+  flex: 1;
+  text-align: center;
+}
+.fsb-attack  { color: var(--red-t);  border-color: var(--red);    background: rgba(139,26,26,0.1); }
+.fsb-attack:hover  { background: rgba(139,26,26,0.3); }
+.fsb-defend  { color: var(--blue-t); border-color: var(--blue-l); background: rgba(26,61,92,0.1); }
+.fsb-defend:hover  { background: rgba(26,61,92,0.3); }
+.fsb-reset   { color: var(--text-faint); border-color: var(--border); background: transparent; }
+.fsb-reset:hover   { color: var(--text-dim); }
+
+/* ============================
+   LOG
+   ============================ */
+#log-strip {
+  border-top: 1px solid var(--border2);
+  background: var(--surface);
+  flex-shrink: 0;
+  max-height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+.log-header {
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.log-header-title {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+}
+.log-quick-btns { display: flex; gap: 4px; margin-left: 8px; flex-wrap: wrap; }
+.log-quick {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+.log-quick:hover { background: var(--surface2); }
+.log-spacer { flex: 1; }
+.log-clear { font-size: 11px; color: var(--text-dim); cursor: pointer; padding: 0 6px; }
+.log-clear:hover { color: var(--red-t); }
+.log-note-row { display: flex; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.log-note-input {
+  flex: 1;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 4px 8px;
+  outline: none;
+}
+.log-note-input:focus { border-color: var(--green-l); }
+.log-note-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--green-l);
+  background: transparent;
+  color: var(--green-t);
+  cursor: pointer;
+}
+.log-note-btn:hover { background: rgba(45,74,30,0.3); }
+#log-entries {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.log-entry {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.3px;
+  padding: 1px 2px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.log-time { color: var(--text-dim); flex-shrink: 0; min-width: 50px; }
+.log-hp    { color: var(--hp-col); }
+.log-wp    { color: var(--wp-col); }
+.log-san   { color: var(--san-col); }
+.log-dice  { color: var(--crit-col); }
+.log-note  { color: var(--text-dim); }
+.log-flow  { color: var(--blue-t); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* Btn */
+.btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border: 1px solid;
+  cursor: pointer;
+  text-transform: uppercase;
+  background: transparent;
+}
+.btn-green { color: var(--green-t); border-color: var(--green-l); }
+.btn-green:hover { background: rgba(45,74,30,0.3); }
+.btn-neutral { color: var(--text-dim); border-color: var(--border2); }
+.btn-neutral:hover { background: var(--surface2); }
+</style>
+</head>
+<body>
+
+<!-- ======================================
+     LOAD SCREEN
+     ====================================== -->
+<div id="load-screen">
+  <div class="load-box">
+    <div class="load-title">Delta Green</div>
+    <div class="load-sub">Combat Companion — Player Edition</div>
+
+    <!-- Saved roster -->
+    <div class="load-section" id="ls-roster-section">
+      <div class="load-section-title">Load from Saved Agents</div>
+      <div class="load-roster-list" id="load-roster-list">
+        <div style="font-size:10px;color:var(--text-faint);padding:8px;text-align:center;">No saved agents found.</div>
+      </div>
+    </div>
+
+    <div class="load-divider">— or paste a character sheet URL —</div>
+
+    <!-- URL paste -->
+    <div class="load-section">
+      <div class="load-section-title">Load from Character Sheet URL</div>
+      <div class="load-url-row">
+        <input type="text" class="load-input" id="load-url-input" placeholder="https://litzylowe.github.io/delta-green/#..." >
+        <button class="btn btn-green" onclick="loadFromURL()">Load</button>
+      </div>
+      <div class="load-error" id="load-error"></div>
+    </div>
+
+    <div class="load-divider">— or enter stats manually —</div>
+
+    <!-- Manual entry -->
+    <div class="load-section">
+      <div class="load-section-title">Manual Entry</div>
+      <div class="load-manual-grid">
+        <div class="lm-field"><label class="lm-label">Name</label><input class="lm-input" id="m-name" placeholder="Agent..."></div>
+        <div class="lm-field"><label class="lm-label">DEX</label><input class="lm-input" type="number" id="m-dex" value="10" min="1" max="25"></div>
+        <div class="lm-field"><label class="lm-label">HP</label><input class="lm-input" type="number" id="m-hp" value="10" min="1" max="30"></div>
+        <div class="lm-field"><label class="lm-label">WP</label><input class="lm-input" type="number" id="m-wp" value="10" min="1" max="20"></div>
+        <div class="lm-field"><label class="lm-label">SAN</label><input class="lm-input" type="number" id="m-san" value="50" min="0" max="99"></div>
+        <div class="lm-field"><label class="lm-label">POW</label><input class="lm-input" type="number" id="m-pow" value="10" min="1" max="25"></div>
+      </div>
+      <button class="btn btn-green" onclick="loadManual()">Begin Combat</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================
+     MAIN UI
+     ====================================== -->
+<div id="main">
+
+  <!-- TOP BAR -->
+  <div id="topbar">
+    <span class="tb-agent-name" id="tb-name">—</span>
+    <span class="tb-sep">//</span>
+    <span class="tb-agent-meta" id="tb-meta">—</span>
+    <span class="tb-sep">//</span>
+    <span class="tb-round" id="tb-round">Round 1</span>
+    <span id="tb-phase" class="phase-idle">Idle</span>
+    <span class="tb-spacer"></span>
+    <button class="tb-btn tb-btn-neutral" onclick="incRound()">+ Round</button>
+    <button class="tb-btn tb-btn-amber" onclick="location.reload()">↺ New Agent</button>
+  </div>
+
+  <!-- BODY -->
+  <div id="body">
+
+    <!-- ===== LEFT: STATS ===== -->
+    <div class="panel">
+      <div class="panel-header">Agent Stats</div>
+      <div class="panel-body">
+
+        <!-- HP -->
+        <div class="big-stat-block">
+          <div class="big-stat-label">
+            <span style="color:var(--hp-col);">■ Hit Points</span>
+            <span id="hp-bp-warn" style="font-size:8px;color:var(--red-t);display:none;">⚠ CRITICAL</span>
+          </div>
+          <div class="big-stat-bar-track">
+            <div class="big-stat-bar-fill" id="hp-bar" style="background:var(--hp-col);width:100%"></div>
+          </div>
+          <div class="big-stat-numbers">
+            <span class="big-stat-current" id="hp-cur" style="color:var(--hp-col);">—</span>
+            <span class="big-stat-max" id="hp-max">/ —</span>
+            <div class="big-stat-btns">
+              <button class="big-adj big-adj-5" onclick="adjHP(-5)" title="-5 HP">−5</button>
+              <button class="big-adj" onclick="adjHP(-1)" title="-1 HP">−</button>
+              <button class="big-adj" onclick="adjHP(1)"  title="+1 HP">+</button>
+              <button class="big-adj big-adj-5" onclick="adjHP(5)" title="+5 HP">+5</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- WP -->
+        <div class="big-stat-block">
+          <div class="big-stat-label" style="color:var(--wp-col);">■ Willpower Points</div>
+          <div class="big-stat-bar-track">
+            <div class="big-stat-bar-fill" id="wp-bar" style="background:var(--wp-col);width:100%"></div>
+          </div>
+          <div class="big-stat-numbers">
+            <span class="big-stat-current" id="wp-cur" style="color:var(--wp-col);">—</span>
+            <span class="big-stat-max" id="wp-max">/ —</span>
+            <div class="big-stat-btns">
+              <button class="big-adj big-adj-5" onclick="adjWP(-5)">−5</button>
+              <button class="big-adj" onclick="adjWP(-1)">−</button>
+              <button class="big-adj" onclick="adjWP(1)">+</button>
+              <button class="big-adj big-adj-5" onclick="adjWP(5)">+5</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SAN -->
+        <div class="big-stat-block">
+          <div class="big-stat-label">
+            <span style="color:var(--san-col);">■ Sanity</span>
+            <span id="san-bp-label" style="font-size:9px;color:var(--text-dim);">BP: —</span>
+          </div>
+          <div class="big-stat-bar-track">
+            <div class="big-stat-bar-fill" id="san-bar" style="background:var(--san-col);width:100%"></div>
+          </div>
+          <div class="big-stat-numbers">
+            <span class="big-stat-current" id="san-cur" style="color:var(--san-col);">—</span>
+            <span class="big-stat-max" style="font-size:10px;color:var(--text-faint);">/ 99</span>
+            <div class="big-stat-btns">
+              <button class="big-adj big-adj-5" onclick="adjSAN(-5)">−5</button>
+              <button class="big-adj" onclick="adjSAN(-1)">−</button>
+              <button class="big-adj" onclick="adjSAN(1)">+</button>
+              <button class="big-adj big-adj-5" onclick="adjSAN(5)">+5</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Six stats -->
+        <div class="six-stats" id="six-stats-grid"></div>
+
+        <!-- Statuses -->
+        <div class="statuses-section">
+          <div class="statuses-title">Status (click to toggle)</div>
+          <div class="status-chips" id="status-chips"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== MIDDLE: WEAPONS + DICE ===== -->
+    <div class="panel">
+      <div class="panel-header">Weapons &amp; Skills</div>
+      <div class="panel-body">
+
+        <!-- Weapons -->
+        <div style="font-size:8px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;margin-bottom:2px;">Weapons — click to load skill</div>
+        <div class="weapons-list" id="weapons-list"></div>
+
+        <!-- Combat skills -->
+        <div style="font-size:8px;letter-spacing:1.5px;color:var(--text-dim);text-transform:uppercase;margin-bottom:2px;margin-top:4px;">Combat Skills — click to roll</div>
+        <div class="skills-grid-combat" id="skills-list"></div>
+
+        <!-- Dice roller -->
+        <div class="dice-roller">
+          <div class="dr-loaded-skill">
+            <span class="dr-skill-name" id="dr-skill-name">No skill loaded</span>
+            <span class="dr-skill-val"  id="dr-skill-val">—</span>
+            <span class="dr-clear" onclick="clearDice()" title="Clear">✕</span>
+          </div>
+          <button class="dr-roll-btn" id="dr-roll-btn" onclick="rollD100()" disabled>Roll d100</button>
+          <div class="dr-result dr-idle" id="dr-result">
+            <span class="dr-result-number" id="dr-result-num">—</span>
+            <span class="dr-result-label"  id="dr-result-lbl">Load a skill &amp; roll</span>
+            <span class="dr-result-detail" id="dr-result-detail"></span>
+          </div>
+          <div class="dr-other-dice">
+            <button class="dr-die-btn" onclick="rollRaw(4)">d4</button>
+            <button class="dr-die-btn" onclick="rollRaw(6)">d6</button>
+            <button class="dr-die-btn" onclick="rollRaw(8)">d8</button>
+            <button class="dr-die-btn" onclick="rollRaw(10)">d10</button>
+            <button class="dr-die-btn" onclick="rollRaw(20)">d20</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== RIGHT: FLOW ===== -->
+    <div class="panel">
+      <div class="panel-header">Combat Flow Guide</div>
+      <div class="flow-panel-inner">
+        <div class="flow-start-btns">
+          <button class="flow-start-btn fsb-attack"  onclick="startAttack()">⚔ My Attack Turn</button>
+          <button class="flow-start-btn fsb-defend"  onclick="startDefend()">🛡 Defend</button>
+          <button class="flow-start-btn fsb-reset"   onclick="resetFlow()">✕</button>
+        </div>
+        <div id="breadcrumb"></div>
+        <div id="flow-content">
+          <div class="flow-idle">
+            <div class="flow-idle-icon">⬡</div>
+            <div class="flow-idle-text">Press Attack or Defend<br>when it's your turn</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /#body -->
+
+  <!-- LOG STRIP -->
+  <div id="log-strip">
+    <div class="log-header">
+      <span class="log-header-title">Combat Log</span>
+      <div class="log-quick-btns">
+        <button class="log-quick" onclick="quickLog('Suppressed','flow')">+ Suppressed</button>
+        <button class="log-quick" onclick="quickLog('Pinned','flow')">+ Pinned</button>
+        <button class="log-quick" onclick="quickLog('Used First Aid','note')">+ First Aid</button>
+        <button class="log-quick" onclick="quickLog('SAN check passed','note')">+ SAN Pass</button>
+        <button class="log-quick" onclick="quickLog('SAN check failed','san')">+ SAN Fail</button>
+      </div>
+      <span class="log-spacer"></span>
+      <span class="log-clear" onclick="clearLog()">Clear</span>
+    </div>
+    <div class="log-note-row">
+      <input type="text" class="log-note-input" id="log-note-input" placeholder="Add a combat note..." onkeydown="if(event.key==='Enter')addNote()">
+      <button class="log-note-btn" onclick="addNote()">+ Add</button>
+    </div>
+    <div id="log-entries"></div>
+  </div>
+
+</div><!-- /#main -->
+
+<script>
+// ============================
+// SKILL DEFINITIONS (matches character sheet)
+// ============================
+const ALL_SKILLS = [
+  { name:'Accounting',      base:10  },
+  { name:'Alertness',       base:20  },
+  { name:'Anthropology',    base:0   },
+  { name:'Archeology',      base:0   },
+  { name:'Art',             base:0   },
+  { name:'Artillery',       base:0   },
+  { name:'Athletics',       base:30  },
+  { name:'Bureaucracy',     base:10  },
+  { name:'Computer Science',base:0   },
+  { name:'Craft',           base:0   },
+  { name:'Criminology',     base:10  },
+  { name:'Demolitions',     base:0   },
+  { name:'Disguise',        base:10  },
+  { name:'Dodge',           base:30  },
+  { name:'Drive',           base:20  },
+  { name:'Firearms',        base:20  },
+  { name:'First Aid',       base:10  },
+  { name:'Forensics',       base:0   },
+  { name:'Heavy Machinery', base:10  },
+  { name:'Heavy Weapons',   base:0   },
+  { name:'History',         base:10  },
+  { name:'HUMINT',          base:10  },
+  { name:'Law',             base:0   },
+  { name:'Medicine',        base:0   },
+  { name:'Melee Weapons',   base:30  },
+  { name:'Military Science',base:0   },
+  { name:'Navigate',        base:10  },
+  { name:'Occult',          base:10  },
+  { name:'Persuade',        base:20  },
+  { name:'Pharmacy',        base:0   },
+  { name:'Pilot',           base:0   },
+  { name:'Psychotherapy',   base:10  },
+  { name:'Ride',            base:10  },
+  { name:'Science',         base:0   },
+  { name:'Search',          base:20  },
+  { name:'SIGINT',          base:0   },
+  { name:'Stealth',         base:10  },
+  { name:'Surgery',         base:0   },
+  { name:'Survival',        base:10  },
+  { name:'Swim',            base:20  },
+  { name:'Unarmed Combat',  base:40  },
+  { name:'Unnatural',       base:0   },
+  { name:'Foreign Language',base:0   },
+  { name:'Other Skill',     base:0   },
+];
+
+// Indices of combat-relevant skills to show
+const COMBAT_SKILL_INDICES = [1,6,11,13,14,15,16,19,24,25,34,36,38,40];
+
+// ============================
+// FLOW DATA
+// ============================
+const FLOWS = {
+  // ATTACK
+  b_action:{type:'choice',phase:'attack',title:'B) Choose Your Action',
+    text:'What are you doing this turn?',
+    note:'Max advantage: +40% | Max disadvantage: no limit.',
+    options:[
+      {label:'Attack',next:'c_surprise'},{label:'Called Shot',next:'c_surprise'},
+      {label:'Disarm',next:'c_surprise'},{label:'Pin',next:'c_surprise'},
+      {label:'Aim',next:'aim'},{label:'Escape',next:'escape'},
+      {label:'Move / Wait / Other',next:'end_turn'},
+    ]},
+  aim:{type:'info',phase:'attack',title:'Aim',
+    text:'You spend this turn aiming. Gain a bonus on your next attack roll.',next:'end_turn'},
+  escape:{type:'info',phase:'attack',title:'Escape',
+    text:'You attempt to escape a pin or grapple. Opposed roll applies.',next:'end_turn'},
+  c_surprise:{type:'decision',phase:'attack',title:'C) Surprise Attack?',
+    text:'Does your target not know combat has started?',yes:'c_helpless',no:'d_modifiers'},
+  c_helpless:{type:'decision',phase:'attack',title:'Is the Target Totally Helpless?',
+    text:'Are they bound, asleep, or completely unable to act?',yes:'c_murder',no:'c_unaware'},
+  c_murder:{type:'info',phase:'attack',title:'No Roll Needed',
+    text:'Target is totally helpless — your attack automatically succeeds.',
+    note:'Skip straight to G) and calculate damage.',next:'g_damage'},
+  c_unaware:{type:'decision',phase:'attack',title:'Target Active but Unaware?',
+    text:'Are they conscious and moving, but unaware you\'re about to attack?',
+    yes:'c_bonus',no:'d_modifiers'},
+  c_bonus:{type:'info',phase:'attack',title:'⚡ Surprise Bonus',
+    text:'Your attack roll is at +20%. A success automatically counts as a critical hit.',
+    note:'Apply the +20% now, then roll.',next:'d_modifiers'},
+  d_modifiers:{type:'info',phase:'attack',title:'D) Apply Combat Modifiers',
+    text:'Apply all situational modifiers before rolling.',
+    note:'Each advantage or disadvantage = ±20%\nMax advantage: +40% | Disadvantage: no limit.',
+    next:'e_roll'},
+  e_roll:{type:'info',phase:'attack',title:'E) Make Your Attack Roll',
+    text:'Roll d100 against your modified attack skill. Note whether it\'s a critical, success, or fumble.',
+    note:'Use the dice roller → load your weapon\'s skill, then roll.',
+    diceHint:true,next:'e_called'},
+  e_called:{type:'decision',phase:'attack',title:'Called Shot?',
+    text:'Did you declare this as a called shot?',yes:'e_crowd',no:'f_type'},
+  e_crowd:{type:'decision',phase:'attack',title:'Shooting Into a Crowd?',
+    text:'Is your target surrounded by or in the middle of other people?',
+    yes:'e_crowd_info',no:'f_type'},
+  e_crowd_info:{type:'info',phase:'attack',title:'Crowd Fire',
+    text:'Hit: you hit your intended target.\nMiss: a random bystander is hit instead.',next:'f_type'},
+  f_type:{type:'choice',phase:'attack',title:'F) Weapon Type',
+    text:'What kind of attack is this?',
+    options:[
+      {label:'F1) Melee / Hand-to-Hand',next:'f1'},
+      {label:'F2) Ranged Weapon',next:'f2'},
+    ]},
+  f1:{type:'info',phase:'attack',title:'F1) Melee / Hand-to-Hand',
+    text:'Modify your damage roll by your Strength bonus.',
+    note:'STR 13–15: +1 | STR 16–17: +1D4 | STR 18: +1D6',next:'g_damage'},
+  f2:{type:'info',phase:'attack',title:'F2) Ranged Weapon',
+    text:'Use the weapon\'s listed damage. No Strength modifier for ranged.',next:'g_damage'},
+  g_damage:{type:'info',phase:'attack',title:'G) Calculate Total Damage',
+    text:'Roll your weapon\'s damage dice and add any modifiers.',
+    note:'Use the dice roller for damage rolls.',next:'g_cover'},
+  g_cover:{type:'decision',phase:'attack',title:'Target Using Cover?',
+    text:'Is your target behind cover that could absorb or reduce damage?',
+    yes:'g_cover_info',no:'g_armor'},
+  g_cover_info:{type:'info',phase:'attack',title:'Cover',
+    text:'Reduce damage dealt to the target. Overflow goes to the cover\'s HP — when it hits 0, cover is destroyed.',
+    next:'g_armor'},
+  g_armor:{type:'decision',phase:'attack',title:'Target Using Armor?',
+    text:'Is your target wearing body armor or other protection?',
+    yes:'g_armor_info',no:'h_crit'},
+  g_armor_info:{type:'info',phase:'attack',title:'Armor',
+    text:'Reduce damage by the armor\'s rating. Armor does NOT protect against Called Shots or successful Lethality rolls.',
+    next:'h_crit'},
+  h_crit:{type:'decision',phase:'attack',title:'Was Your Roll a Critical?',
+    text:'Did you roll under 1/5 of your modified skill?',
+    yes:'h_leth_c',no:'h_leth_n'},
+  h_leth_c:{type:'decision',phase:'attack',title:'Weapon Has Lethality? (Critical)',
+    text:'Does your weapon have a Lethality rating?',yes:'h_leth_c_info',no:'h_kill_c'},
+  h_leth_c_info:{type:'info',phase:'attack',title:'💀 Critical + Lethality!',
+    text:'Double the Lethality rating. If the roll fails, deal double HP damage instead.',next:'h_apply'},
+  h_kill_c:{type:'decision',phase:'attack',title:'Weapon Has Kill Radius? (Critical)',
+    text:'Does your weapon have a Kill Radius?',yes:'h_kill_info',no:'h_supp_c'},
+  h_supp_c:{type:'decision',phase:'attack',title:'Weapon Has Suppression? (Critical)',
+    text:'Does your weapon have a Suppression effect?',yes:'h_supp_aware',no:'h_apply'},
+  h_leth_n:{type:'decision',phase:'attack',title:'Weapon Has Lethality?',
+    text:'Does your weapon have a Lethality rating?',yes:'h_leth_n_info',no:'h_kill_n'},
+  h_leth_n_info:{type:'info',phase:'attack',title:'Make the Lethality Roll',
+    text:'Roll d100 against the Lethality rating.\nSuccess = instant kill.\nFailure = normal HP damage.',next:'h_apply'},
+  h_kill_n:{type:'decision',phase:'attack',title:'Weapon Has Kill Radius?',
+    text:'Does your weapon have a Kill Radius?',yes:'h_kill_info',no:'h_supp_n'},
+  h_supp_n:{type:'decision',phase:'attack',title:'Weapon Has Suppression?',
+    text:'Does your weapon have a Suppression effect?',yes:'h_supp_aware',no:'h_apply'},
+  h_kill_info:{type:'info',phase:'attack',title:'Apply Kill Radius',
+    text:'Apply the Kill Radius effect to all valid targets within the weapon\'s blast zone.',next:'h_apply'},
+  h_supp_aware:{type:'decision',phase:'attack',title:'Target Aware of Danger?',
+    text:'Does the target know they\'re being fired on?',yes:'h_supp_apply',no:'h_no_supp'},
+  h_supp_apply:{type:'info',phase:'attack',title:'Apply Suppression',
+    text:'Target is suppressed. They must pass a WP check or take the suppression penalty next action.',next:'h_apply'},
+  h_no_supp:{type:'info',phase:'attack',title:'Cannot Suppress',
+    text:'Target is unaware of the threat — suppression cannot be applied.',next:'h_apply'},
+  h_apply:{type:'decision',phase:'attack',title:'H) Apply Damage — Combat Over?',
+    text:'Apply all damage and effects. Is the combat now resolved?',
+    yes:'aftermath',no:'end_turn',
+    yesLabel:'Yes — Aftermath',noLabel:'No — Next Turn'},
+
+  // DEFENSE
+  def_start:{type:'info',phase:'defense',title:'Defense',
+    text:'You can defend at any point in initiative order. Defending counts as your full action for the turn.',
+    next:'def_aware'},
+  def_aware:{type:'decision',phase:'defense',title:'1) Are You Aware of the Attack?',
+    text:'Do you know you\'re being attacked right now?',yes:'def_pinned',no:'def_no'},
+  def_no:{type:'info',phase:'defense',title:'Cannot Defend',
+    text:'You\'re not aware of the attack — defense is impossible. The attack proceeds uncontested.',next:'def_end'},
+  def_pinned:{type:'decision',phase:'defense',title:'2) Are You Pinned or Pinning?',
+    text:'Are you currently pinned by someone, or actively pinning another combatant?',
+    yes:'def_no',no:'def_choose'},
+  def_choose:{type:'choice',phase:'defense',title:'3) Choose Your Defense',
+    text:'How do you respond to the attack?',
+    options:[
+      {label:'3a) Fight Back',next:'def_fight_choose'},
+      {label:'3b) Dodge',next:'def_dodge_range'},
+    ]},
+  def_fight_choose:{type:'choice',phase:'defense',title:'4a) Fight Back — Choose Action',
+    text:'What fighting-back action do you take?',
+    options:[
+      {label:'Attack',next:'def_fight_roll'},{label:'Called Shot',next:'def_fight_roll'},
+      {label:'Disarm', next:'def_fight_roll'},{label:'Pin',next:'def_fight_roll'},
+    ]},
+  def_fight_roll:{type:'decision',phase:'defense',title:'5a) Opposed Attack Roll',
+    text:'Make an opposed attack roll against your aggressor. Apply modifiers as in D.',
+    note:'Load your attack skill in the dice roller and roll now.',
+    diceHint:true,yes:'def_block',no:'def_hit',
+    yesLabel:'My Roll Succeeds',noLabel:'My Roll Fails'},
+  def_block:{type:'info',phase:'defense',title:'6a) Blocked! Counter-Attack',
+    text:'You block their attack. You may now continue with your own attack (F1 or F2) against the aggressor.',
+    next:'def_end'},
+  def_dodge_range:{type:'decision',phase:'defense',title:'3b) Are You in Melee Range?',
+    text:'Is your attacker in melee range of you?',
+    yes:'def_dodge_melee',no:'def_ranged_cover'},
+  def_dodge_melee:{type:'decision',phase:'defense',title:'Dodge — Opposed Roll (Melee)',
+    text:'Make an opposed roll against the aggressor\'s attack.',
+    note:'Load your Dodge skill and roll.',diceHint:true,
+    yes:'def_dodged',no:'def_hit',
+    yesLabel:'My Roll Succeeds',noLabel:'My Roll Fails'},
+  def_dodged:{type:'info',phase:'defense',title:'✓ You Dodged!',
+    text:'Attack dodged. You can use the same result to dodge any other melee attack against you this turn.',next:'def_end'},
+  def_ranged_cover:{type:'decision',phase:'defense',title:'Nearby Cover Available?',
+    text:'Is there cover nearby you can use to reduce damage from this ranged attack?',
+    yes:'def_cover_roll',no:'def_hit'},
+  def_cover_roll:{type:'decision',phase:'defense',title:'Dodge — Opposed Roll (Cover)',
+    text:'Make an opposed roll against the aggressor\'s attack.',
+    note:'Load your Dodge skill and roll.',diceHint:true,
+    yes:'def_reduced',no:'def_hit',
+    yesLabel:'My Roll Succeeds',noLabel:'My Roll Fails'},
+  def_reduced:{type:'info',phase:'defense',title:'Damage Reduced by Cover',
+    text:'Apply received damage, reduced by the cover\'s protection. Update your HP.',next:'def_end'},
+  def_hit:{type:'info',phase:'defense',title:'You Take Full Damage',
+    text:'Apply the incoming damage and effects in full. Update your HP now.',next:'def_end'},
+  def_end:{type:'end',phase:'defense',title:'Defense Resolved',
+    text:'Your defensive action is complete.'},
+  // END
+  end_turn:{type:'end',phase:'end',title:'Turn Complete',
+    text:'Your turn is over. Wait for the initiative order to come back around.'},
+  aftermath:{type:'end',phase:'end',title:'⬡ The Aftermath',
+    text:'Combat is over. Address injuries, sanity loss, and the operational consequences.'},
+};
+
+// ============================
+// STATE
+// ============================
+let agent = null;
+let round = 1;
+let flowHistory = [];
+let loadedSkillName = '';
+let loadedSkillVal  = 0;
+let logEntries = [];
+const STATUSES = ['Suppressed','Pinned','Hurt','Dying','Insane','Unconscious'];
+let activeStatuses = [];
+
+// ============================
+// CHARACTER LOADING
+// ============================
+function decodeSheetState(hash) {
+  try {
+    return JSON.parse(decodeURIComponent(escape(atob(hash))));
+  } catch(e) { return null; }
+}
+
+function stateToAgent(state) {
+  const name     = state['agent-name']       || 'Unknown Agent';
+  const prof     = state['agent-profession'] || '';
+  const str = parseInt(state['stat-score-str']) || 10;
+  const con = parseInt(state['stat-score-con']) || 10;
+  const dex = parseInt(state['stat-score-dex']) || 10;
+  const intv= parseInt(state['stat-score-int']) || 10;
+  const pow = parseInt(state['stat-score-pow']) || 10;
+  const cha = parseInt(state['stat-score-cha']) || 10;
+
+  const hpMax = parseInt(state['derived-cur-hp'])  || Math.ceil((str + con) / 2);
+  const wpMax = parseInt(state['derived-cur-wp'])  || pow;
+  const san   = parseInt(state['derived-cur-san']) || pow * 5;
+  const bp    = parseInt(state['derived-cur-bp'])  || san - pow;
+
+  const skills = ALL_SKILLS.map((sk, i) => ({
+    name: sk.name,
+    base: sk.base,
+    val: parseInt(state[`skill-${i}-val`]) || sk.base,
+  }));
+
+  const weapons = [];
+  for (let i = 0; i < 5; i++) {
+    const wName = state[`weapon-${i}-name`];
+    if (wName && wName.trim()) {
+      const rawSkill = state[`weapon-${i}-skill`] || '';
+      const skillPct = parseInt(rawSkill) || 0;
+      weapons.push({
+        name:     wName.trim(),
+        skillPct: skillPct,
+        skillRaw: rawSkill,
+        damage:   state[`weapon-${i}-damage`] || '—',
+        range:    state[`weapon-${i}-range`]  || '—',
+        ammo:     state[`weapon-${i}-ammo`]   || '—',
+        notes:    state[`weapon-${i}-notes`]  || '',
+        lethality:state[`weapon-${i}-lethality`] || '',
+      });
+    }
+  }
+
+  return { name, prof, str, con, dex, intv, pow, cha,
+           hp: hpMax, hpMax, wp: wpMax, wpMax, san, bp, skills, weapons };
+}
+
+function loadFromURL() {
+  const raw = document.getElementById('load-url-input').value.trim();
+  let hash = '';
+  try {
+    const url = new URL(raw);
+    hash = url.hash.slice(1);
+  } catch(e) {
+    hash = raw.replace(/^#/, '');
+  }
+  if (!hash) {
+    document.getElementById('load-error').textContent = 'No character data found in that URL.';
+    return;
+  }
+  const state = decodeSheetState(hash);
+  if (!state) {
+    document.getElementById('load-error').textContent = 'Could not decode that URL. Make sure it\'s a valid character sheet link.';
+    return;
+  }
+  launchWithAgent(stateToAgent(state));
+}
+
+function loadFromRoster(agentData) {
+  launchWithAgent(stateToAgent(agentData.state));
+}
+
+function loadManual() {
+  const name = document.getElementById('m-name').value.trim() || 'Agent';
+  const dex  = parseInt(document.getElementById('m-dex').value)  || 10;
+  const hp   = parseInt(document.getElementById('m-hp').value)   || 10;
+  const wp   = parseInt(document.getElementById('m-wp').value)   || 10;
+  const san  = parseInt(document.getElementById('m-san').value)  || 50;
+  const pow  = parseInt(document.getElementById('m-pow').value)  || 10;
+  const bp   = san - pow;
+  launchWithAgent({
+    name, prof: 'Manual Entry', str:10, con:10, dex, intv:10, pow, cha:10,
+    hp, hpMax: hp, wp, wpMax: wp, san, bp,
+    skills: ALL_SKILLS.map((sk,i) => ({ name: sk.name, base: sk.base, val: sk.base })),
+    weapons: [],
+  });
+}
+
+function launchWithAgent(a) {
+  agent = a;
+  document.getElementById('load-screen').style.display = 'none';
+  document.getElementById('main').style.display = 'flex';
+  buildUI();
+  addLog(`Agent ${a.name} entered combat.`, 'flow');
+}
+
+function buildUI() {
+  const a = agent;
+  document.getElementById('tb-name').textContent = a.name;
+  document.getElementById('tb-meta').textContent = `${a.prof || 'Agent'} · DEX ${a.dex}`;
+  renderStats();
+  renderSixStats();
+  renderWeapons();
+  renderSkills();
+  renderStatuses();
+}
+
+// ============================
+// STATS RENDERING
+// ============================
+function renderStats() {
+  const a = agent;
+  const hpPct  = Math.max(0, Math.min(100, Math.round((a.hp  / a.hpMax) * 100)));
+  const wpPct  = Math.max(0, Math.min(100, Math.round((a.wp  / a.wpMax) * 100)));
+  const sanPct = Math.max(0, Math.min(100, a.san));
+  document.getElementById('hp-bar').style.width   = hpPct  + '%';
+  document.getElementById('wp-bar').style.width   = wpPct  + '%';
+  document.getElementById('san-bar').style.width  = sanPct + '%';
+  document.getElementById('hp-cur').textContent   = a.hp;
+  document.getElementById('hp-max').textContent   = '/ ' + a.hpMax;
+  document.getElementById('wp-cur').textContent   = a.wp;
+  document.getElementById('wp-max').textContent   = '/ ' + a.wpMax;
+  document.getElementById('san-cur').textContent  = a.san;
+  document.getElementById('san-bp-label').textContent = 'BP: ' + a.bp;
+  document.getElementById('hp-bp-warn').style.display = a.hp <= Math.floor(a.hpMax / 2) ? 'inline' : 'none';
+  // Color bar based on health
+  const hpEl = document.getElementById('hp-bar');
+  hpEl.style.background = a.hp <= Math.floor(a.hpMax / 4) ? 'var(--red-l)' :
+                           a.hp <= Math.floor(a.hpMax / 2) ? '#e8a030' : 'var(--hp-col)';
+}
+
+function renderSixStats() {
+  const a = agent;
+  const stats = [
+    {label:'STR',val:a.str},{label:'CON',val:a.con},{label:'DEX',val:a.dex},
+    {label:'INT',val:a.intv},{label:'POW',val:a.pow},{label:'CHA',val:a.cha},
+  ];
+  document.getElementById('six-stats-grid').innerHTML = stats.map(s => `
+    <div class="six-stat-item">
+      <span class="six-stat-label">${s.label}</span>
+      <span class="six-stat-val">${s.val || '—'}</span>
+      <span class="six-stat-x5">${s.val ? s.val*5+'%' : ''}</span>
+    </div>
+  `).join('');
+}
+
+function adjHP(delta) {
+  const prev = agent.hp;
+  agent.hp = Math.max(0, Math.min(agent.hpMax, agent.hp + delta));
+  if (agent.hp !== prev) {
+    const diff = agent.hp - prev;
+    addLog(`HP ${diff > 0 ? '+' : ''}${diff} → ${agent.hp}/${agent.hpMax}`, 'hp');
+    renderStats();
+  }
+}
+function adjWP(delta) {
+  const prev = agent.wp;
+  agent.wp = Math.max(0, Math.min(agent.wpMax, agent.wp + delta));
+  if (agent.wp !== prev) {
+    const diff = agent.wp - prev;
+    addLog(`WP ${diff > 0 ? '+' : ''}${diff} → ${agent.wp}/${agent.wpMax}`, 'wp');
+    renderStats();
+  }
+}
+function adjSAN(delta) {
+  const prev = agent.san;
+  agent.san = Math.max(0, Math.min(99, agent.san + delta));
+  if (agent.san !== prev) {
+    const diff = agent.san - prev;
+    addLog(`SAN ${diff > 0 ? '+' : ''}${diff} → ${agent.san}`, 'san');
+    renderStats();
+  }
+}
+
+function renderStatuses() {
+  const cont = document.getElementById('status-chips');
+  cont.innerHTML = STATUSES.map(s => {
+    const active = activeStatuses.includes(s);
+    const cls = active ? `sc-${s.toLowerCase()}` : 'sc-off';
+    return `<span class="status-chip ${cls}" onclick="toggleStatus('${s}')">${s}</span>`;
+  }).join('');
+}
+
+function toggleStatus(s) {
+  const i = activeStatuses.indexOf(s);
+  if (i >= 0) { activeStatuses.splice(i, 1); addLog(`Status removed: ${s}`, 'note'); }
+  else { activeStatuses.push(s); addLog(`Status: ${s}`, 'flow'); }
+  renderStatuses();
+}
+
+// ============================
+// WEAPONS & SKILLS
+// ============================
+let selectedWeapon = -1;
+
+function renderWeapons() {
+  const cont = document.getElementById('weapons-list');
+  if (!agent.weapons.length) {
+    cont.innerHTML = '<div style="padding:10px;font-size:10px;color:var(--text-faint);text-align:center;">No weapons on sheet.<br>Add via manual load or character sheet.</div>';
+    return;
+  }
+  cont.innerHTML = agent.weapons.map((w, i) => `
+    <div class="weapon-item ${selectedWeapon===i?'selected':''}" onclick="selectWeapon(${i})">
+      <div class="weapon-name">${esc(w.name)}</div>
+      <div class="weapon-stats">
+        Skill: <span class="weapon-skill-val">${w.skillPct ? w.skillPct+'%' : w.skillRaw || '—'}</span>
+        · DMG: ${esc(w.damage)} · Range: ${esc(w.range)} · Ammo: ${esc(w.ammo)}
+        ${w.lethality ? `· Lethality: ${esc(w.lethality)}%` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function selectWeapon(i) {
+  selectedWeapon = i;
+  const w = agent.weapons[i];
+  if (w.skillPct) {
+    loadDiceSkill(w.name + ' (' + w.skillRaw + ')', w.skillPct);
+  }
+  renderWeapons();
+}
+
+function renderSkills() {
+  const cont = document.getElementById('skills-list');
+  cont.innerHTML = COMBAT_SKILL_INDICES.map(idx => {
+    const sk = agent.skills[idx];
+    if (!sk || sk.val === 0) return '';
+    const isLoaded = loadedSkillName.startsWith(sk.name);
+    return `
+      <div class="skill-row ${isLoaded ? 'loaded' : ''}" onclick="loadDiceSkill('${sk.name}', ${sk.val})">
+        <span class="skill-row-name">${sk.name}</span>
+        <span class="skill-row-val">${sk.val}</span>
+        <span class="skill-row-pct">%</span>
+      </div>
+    `;
+  }).filter(Boolean).join('');
+}
+
+// ============================
+// DICE ROLLER
+// ============================
+function loadDiceSkill(name, val) {
+  loadedSkillName = name;
+  loadedSkillVal  = val;
+  document.getElementById('dr-skill-name').textContent = name;
+  document.getElementById('dr-skill-val').textContent  = val + '%';
+  document.getElementById('dr-roll-btn').disabled = false;
+  // Reset result display
+  const res = document.getElementById('dr-result');
+  res.className = 'dr-result dr-idle';
+  document.getElementById('dr-result-num').textContent    = '—';
+  document.getElementById('dr-result-lbl').textContent    = 'Ready to roll';
+  document.getElementById('dr-result-detail').textContent = `Crit ≤ ${Math.floor(loadedSkillVal/5)} | Success ≤ ${loadedSkillVal}`;
+  renderSkills();
+}
+
+function clearDice() {
+  loadedSkillName = '';
+  loadedSkillVal  = 0;
+  document.getElementById('dr-skill-name').textContent = 'No skill loaded';
+  document.getElementById('dr-skill-val').textContent  = '—';
+  document.getElementById('dr-roll-btn').disabled = true;
+  const res = document.getElementById('dr-result');
+  res.className = 'dr-result dr-idle';
+  document.getElementById('dr-result-num').textContent    = '—';
+  document.getElementById('dr-result-lbl').textContent    = 'Load a skill & roll';
+  document.getElementById('dr-result-detail').textContent = '';
+  selectedWeapon = -1;
+  renderSkills();
+  renderWeapons();
+}
+
+function rollD100() {
+  if (!loadedSkillVal) return;
+  const roll = Math.floor(Math.random() * 100) + 1;
+  const critThresh = Math.max(1, Math.floor(loadedSkillVal / 5));
+  const isFumble  = roll >= 99 && loadedSkillVal < 100;
+  const isCrit    = !isFumble && roll <= critThresh;
+  const isSuccess = !isFumble && !isCrit && roll <= loadedSkillVal;
+  const isFailure = !isFumble && !isCrit && !isSuccess;
+
+  const res = document.getElementById('dr-result');
+  let cls, lbl, detail;
+  if (isFumble)  { cls='dr-fumble';  lbl='FUMBLE!';  detail='Something goes badly wrong.'; }
+  else if (isCrit){ cls='dr-critical';lbl='CRITICAL!';detail=`Roll ≤ ${critThresh} — double effect!`; }
+  else if (isSuccess){cls='dr-success';lbl='SUCCESS';  detail=`Rolled ${roll} vs ${loadedSkillVal}%`; }
+  else           { cls='dr-failure'; lbl='FAILURE';  detail=`Rolled ${roll} vs ${loadedSkillVal}%`; }
+
+  res.className = `dr-result ${cls}`;
+  document.getElementById('dr-result-num').textContent    = roll;
+  document.getElementById('dr-result-lbl').textContent    = lbl;
+  document.getElementById('dr-result-detail').textContent = detail;
+  addLog(`${loadedSkillName}: rolled ${roll} — ${lbl} (${detail})`, 'dice');
+}
+
+function rollRaw(sides) {
+  const roll = Math.floor(Math.random() * sides) + 1;
+  const res = document.getElementById('dr-result');
+  res.className = 'dr-result dr-idle';
+  document.getElementById('dr-result-num').textContent    = roll;
+  document.getElementById('dr-result-lbl').textContent    = `d${sides} roll`;
+  document.getElementById('dr-result-detail').textContent = '';
+  addLog(`d${sides}: rolled ${roll}`, 'dice');
+}
+
+// ============================
+// FLOW
+// ============================
+function startAttack() {
+  flowHistory = ['b_action'];
+  renderFlow();
+}
+function startDefend() {
+  flowHistory = ['def_start'];
+  renderFlow();
+}
+function resetFlow() {
+  flowHistory = [];
+  renderFlow();
+}
+function flowStep(id) {
+  flowHistory.push(id);
+  renderFlow();
+}
+function flowBack() {
+  if (flowHistory.length > 1) { flowHistory.pop(); renderFlow(); }
+}
+
+function renderFlow() {
+  const phaseEl = document.getElementById('tb-phase');
+  if (!flowHistory.length) {
+    document.getElementById('flow-content').innerHTML = `
+      <div class="flow-idle">
+        <div class="flow-idle-icon">⬡</div>
+        <div class="flow-idle-text">Press Attack or Defend<br>when it's your turn</div>
+      </div>`;
+    document.getElementById('breadcrumb').innerHTML = '';
+    phaseEl.textContent = 'Idle'; phaseEl.className = 'phase-idle';
+    return;
+  }
+
+  const stepId = flowHistory[flowHistory.length - 1];
+  const step   = FLOWS[stepId];
+  if (!step) { resetFlow(); return; }
+
+  // Phase indicator
+  phaseEl.textContent = step.phase.charAt(0).toUpperCase() + step.phase.slice(1);
+  phaseEl.className = `phase-${step.phase === 'end' ? 'end' : step.phase}`;
+
+  // Breadcrumb
+  const bc = document.getElementById('breadcrumb');
+  const hist = flowHistory.slice(-4);
+  bc.innerHTML = hist.map((id, i) => {
+    const s = FLOWS[id]; const isLast = i === hist.length-1;
+    return `<span class="bc-item ${isLast?'bc-cur':''}">${s?s.title:id}</span>${!isLast?'<span class="bc-sep">›</span>':''}`;
+  }).join('');
+  bc.scrollLeft = bc.scrollWidth;
+
+  // Dice hint
+  const noteClass = step.diceHint ? 'step-hint dice-cue' : 'step-hint';
+  const noteContent = step.diceHint
+    ? '🎲 ' + (step.note || 'Use the dice roller to make this roll.')
+    : (step.note || '');
+
+  const typeMap = { decision:'◇ Decision', info:'□ Info', choice:'▣ Choose', end:'⬡ End' };
+  const cls     = { decision:'sb-decision', info:'sb-info', choice:'sb-choice', end:'sb-end' };
+
+  let btns = '';
+  if (step.type === 'decision') {
+    btns = `<div class="flow-btn-row">
+      <button class="flow-btn fb-yes" onclick="flowStep('${step.yes}')">${step.yesLabel||'Yes'}</button>
+      <button class="flow-btn fb-no"  onclick="flowStep('${step.no}')">${step.noLabel||'No'}</button>
+    </div>`;
+  } else if (step.type === 'choice') {
+    btns = step.options.map(o =>
+      `<button class="flow-btn fb-neutral" onclick="flowStep('${o.next}')">${o.label}</button>`
+    ).join('');
+  } else if (step.type === 'info') {
+    btns = `<button class="flow-btn fb-cont" onclick="flowStep('${step.next}')">Continue →</button>`;
+  } else if (step.type === 'end') {
+    const isAfter = stepId === 'aftermath';
+    btns = `<button class="flow-btn fb-end" onclick="${isAfter?'handleAftermath()':'handleEndTurn()'}">
+      ${isAfter ? '→ Aftermath' : '→ Turn Complete'}</button>`;
+  }
+
+  document.getElementById('flow-content').innerHTML = `
+    <div class="step-card">
+      <div class="step-badge ${cls[step.type]}">${typeMap[step.type]}</div>
+      <div class="step-title">${step.title}</div>
+      <div class="step-text">${step.text.replace(/\n/g,'<br>')}</div>
+      ${noteContent ? `<div class="${noteClass}">${noteContent.replace(/\n/g,'<br>')}</div>` : ''}
+      <div class="flow-btns">${btns}</div>
+      ${flowHistory.length > 1 ? `
+        <div class="flow-nav">
+          <button class="flow-back" onclick="flowBack()">← Back</button>
+          <button class="flow-back" onclick="resetFlow()">✕ Cancel</button>
+        </div>` : ''}
+    </div>`;
+
+  // Log flow steps
+  addLog(`Flow: ${step.title}`, 'flow');
+}
+
+function handleEndTurn() {
+  incRound();
+  resetFlow();
+}
+function handleAftermath() {
+  addLog('⬡ Combat ended — entering aftermath.', 'flow');
+  resetFlow();
+}
+
+function incRound() {
+  round++;
+  document.getElementById('tb-round').textContent = `Round ${round}`;
+  addLog(`Round ${round} began.`, 'note');
+}
+
+// ============================
+// LOG
+// ============================
+function addLog(msg, type) {
+  const now = new Date();
+  const ts  = `R${round} ${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+  logEntries.unshift({ ts, msg, type });
+  if (logEntries.length > 80) logEntries.pop();
+  renderLog();
+}
+
+function renderLog() {
+  const cont = document.getElementById('log-entries');
+  cont.innerHTML = logEntries.map(e =>
+    `<div class="log-entry">
+      <span class="log-time">${e.ts}</span>
+      <span class="log-${e.type}">${esc(e.msg)}</span>
+    </div>`
+  ).join('');
+}
+
+function addNote() {
+  const inp = document.getElementById('log-note-input');
+  const val = inp.value.trim();
+  if (!val) return;
+  addLog(val, 'note');
+  inp.value = '';
+}
+
+function quickLog(msg, type) { addLog(msg, type); }
+function clearLog() { logEntries = []; renderLog(); }
+
+// ============================
+// ROSTER LOAD
+// ============================
+function populateRoster() {
+  try {
+    const roster = JSON.parse(localStorage.getItem('delta-green-agents')) || [];
+    const cont = document.getElementById('load-roster-list');
+    if (!roster.length) return;
+    cont.innerHTML = roster.map((a, i) => {
+      const d = new Date(a.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      const prof = a.state['agent-profession'] || '—';
+      return `
+        <div class="roster-row" onclick="loadFromRoster(${i})">
+          <span class="roster-name">${esc(a.name)}</span>
+          <span class="roster-meta">${esc(prof)} · ${d}</span>
+        </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function loadFromRoster(i) {
+  try {
+    const roster = JSON.parse(localStorage.getItem('delta-green-agents')) || [];
+    launchWithAgent(stateToAgent(roster[i].state));
+  } catch(e) {
+    document.getElementById('load-error').textContent = 'Could not load that agent.';
+  }
+}
+
+// ============================
+// UTILS
+// ============================
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ============================
+// INIT
+// ============================
+document.addEventListener('DOMContentLoaded', () => {
+  populateRoster();
+  document.getElementById('log-note-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addNote();
+  });
+});
+</script>
+</body>
+</html>
